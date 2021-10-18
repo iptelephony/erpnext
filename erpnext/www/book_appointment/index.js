@@ -102,7 +102,8 @@ async function update_time_slots(selected_date, selected_timezone) {
 }
 
 function get_timeslot_div_layout(timeslot) {
-    let start_time = new Date(timeslot.time)
+    //let start_time = new Date(timeslot.time)
+    let start_time = moment(timeslot.time).toDate()
     let timeslot_div = document.createElement('div');
     timeslot_div.classList.add('time-slot');
     if (!timeslot.availability) {
@@ -190,11 +191,17 @@ function setup_search_params() {
     let search_params = new URLSearchParams(window.location.search);
     let customer_name = search_params.get("name")
     let customer_email = search_params.get("email")
+    let customer_number = search_params.get("phone")
     let detail = search_params.get("details")
     if (customer_name) {
         let name_input = document.getElementById("customer_name");
         name_input.value = customer_name;
         name_input.disabled = true;
+    }
+    if(customer_number) {
+        let number_input = document.getElementById("customer_number");
+        number_input.value = customer_number;
+        number_input.disabled = true;
     }
     if(customer_email) {
         let email_input = document.getElementById("customer_email");

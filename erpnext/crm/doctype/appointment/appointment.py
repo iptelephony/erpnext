@@ -62,10 +62,12 @@ class Appointment(Document):
 	def send_confirmation_email(self):
 		verify_url = self._get_verify_url()
 		template = 'confirm_appointment'
+		scheduled_time = self.scheduled_time.ctime()
 		args = {
 			"link":verify_url,
 			"site_url":frappe.utils.get_url(),
 			"full_name":self.customer_name,
+                        "scheduled_time": scheduled_time,
 		}
 		frappe.sendmail(recipients=[self.customer_email],
 						template=template,

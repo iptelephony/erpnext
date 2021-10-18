@@ -99,6 +99,10 @@ def create_appointment(date, time, tz, contact):
 	appointment.customer_email = contact.get('email', None)
 	appointment.status = 'Open'
 	appointment.insert()
+
+	#appt = frappe.get_doc('Appointment',appointment.name)
+	#appointment.set_verified(appointment.customer_email)
+	
 	return appointment
 
 # Helper Functions
