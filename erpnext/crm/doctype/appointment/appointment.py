@@ -62,17 +62,19 @@ class Appointment(Document):
 	def send_confirmation_email(self):
 		verify_url = self._get_verify_url()
 		template = 'confirm_appointment'
-		scheduled_time = self.scheduled_time.ctime()
+		scheduled_time = self.scheduled_time.strftime('%A %B %-d, %Y at %-I:%M%-p')
 		args = {
 			"link":verify_url,
 			"site_url":frappe.utils.get_url(),
 			"full_name":self.customer_name,
                         "scheduled_time": scheduled_time,
 		}
+		order_num = extract_order_number(self.customer_details) 
+		subject_suffix = " for order {}".format(order_num) if order_num is not None else "" 
 		frappe.sendmail(recipients=[self.customer_email],
 						template=template,
 						args=args,
-						subject=_('Appointment Confirmation'))
+						subject=_('Appointment Confirmation') + subject_suffix)
 		if frappe.session.user == "Guest":
 			frappe.msgprint(
 				_('Please check your email to confirm the appointment'))
@@ -235,3 +237,14 @@ def _get_employee_from_user(user):
 		# frappe.db.exists returns a tuple of a tuple
 		return frappe.get_doc('Employee', employee_docname[0][0])
 	return None
+
+
+def extract_order_number(s):
+    order = None
+    lines = s.splitlines()
+    if len(lines) > 0:
+        parts = lines[0].split('#')
+        if len(parts) > 1:
+            order = parts[1]
+    return order
+
