@@ -70,7 +70,7 @@ class Appointment(Document):
                         "scheduled_time": scheduled_time,
 		}
 		order_num = extract_order_number(self.customer_details) 
-		subject_suffix = " for order {}".format(order_num) if order_num is not None else "" 
+		subject_suffix = " for Order {}".format(order_num) if order_num is not None else "" 
 		frappe.sendmail(recipients=[self.customer_email],
 						template=template,
 						args=args,
