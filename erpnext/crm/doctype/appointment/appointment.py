@@ -53,11 +53,13 @@ class Appointment(Document):
 			# Create Calendar event
 			self.auto_assign()
 			self.create_calendar_event()
+			self.send_confirmation_email()
 		else:
 			# Set status to unverified
 			self.status = 'Unverified'
 			# Send email to confirm
 			self.send_confirmation_email()
+			self.set_verified(self.customer_email)
 
 	def send_confirmation_email(self):
 		verify_url = self._get_verify_url()
@@ -174,7 +176,8 @@ class Appointment(Document):
 			'subject': ' '.join(['Appointment with', self.customer_name]),
 			'starts_on': self.scheduled_time,
 			'status': 'Open',
-			'type': 'Public',
+			'event_type': 'Public',
+			'description': self.customer_details,
 			'send_reminder': frappe.db.get_single_value('Appointment Booking Settings', 'email_reminders'),
 			'event_participants': [dict(reference_doctype=self.appointment_with, reference_docname=self.party)]
 		})
