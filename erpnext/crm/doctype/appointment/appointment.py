@@ -64,14 +64,14 @@ class Appointment(Document):
 	def send_confirmation_email(self):
 		verify_url = self._get_verify_url()
 		template = 'confirm_appointment'
-		scheduled_time = self.scheduled_time.strftime('%A %B %-d, %Y at %-I:%M%-p')
+		scheduled_time = self.scheduled_time if isinstance(self.scheduled_time, str) else self.scheduled_time.strftime('%A %B %-d, %Y at %-I:%M%-p')
 		args = {
 			"link":verify_url,
 			"site_url":frappe.utils.get_url(),
 			"full_name":self.customer_name,
                         "scheduled_time": scheduled_time,
 		}
-		order_num = extract_order_number(self.customer_details) 
+		order_num = extract_order_number(self.customer_details) if self.customer_details is not None else None
 		subject_suffix = " for Order {}".format(order_num) if order_num is not None else "" 
 		frappe.sendmail(recipients=[self.customer_email],
 						template=template,
