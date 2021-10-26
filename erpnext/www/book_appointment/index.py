@@ -43,7 +43,9 @@ def get_appointment_slots(date, timezone):
 	# Database queries
 	settings = frappe.get_doc('Appointment Booking Settings')
 	holiday_list = frappe.get_doc('Holiday List', settings.holiday_list)
-	timeslots = get_available_slots_between(query_start_time, query_end_time, settings)
+	denylist_settings = frappe.get_doc('Appointment Deny List Settings')
+	denylist = frappe.get_doc('Appointment Deny List', denylist_settings.deny_list) if denylist_settings is not None and denylist_settings.deny_list is not None else None
+	timeslots = get_available_slots_between(query_start_time, query_end_time, settings, denylist)
 
 	# Filter and convert timeslots
 	converted_timeslots = []
@@ -62,7 +64,15 @@ def get_appointment_slots(date, timezone):
 	converted_timeslots = filter_timeslots(date_required, converted_timeslots)
 	return converted_timeslots
 
-def get_available_slots_between(query_start_time, query_end_time, settings):
+def check_if_slot_blocked(current_time, denylist):
+    if denylist is not None:
+        denyslots = denylist.slots
+        for slot in denyslots:
+            if current_time >= slot.from_datetime and current_time < slot.to_datetime:
+                return True
+    return False
+
+def get_available_slots_between(query_start_time, query_end_time, settings, denylist):
 	records = _get_records(query_start_time, query_end_time, settings)
 	timeslots = []
 	appointment_duration = datetime.timedelta(
@@ -75,7 +85,8 @@ def get_available_slots_between(query_start_time, query_end_time, settings):
 			current_time = _deltatime_to_datetime(query_end_time, record.from_time)
 			end_time = _deltatime_to_datetime(query_end_time, record.to_time)
 		while current_time + appointment_duration <= end_time:
-			timeslots.append(current_time)
+			if not check_if_slot_blocked(current_time, denylist):
+							timeslots.append(current_time)
 			current_time += appointment_duration
 	return timeslots
 
