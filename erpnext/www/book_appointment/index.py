@@ -45,7 +45,8 @@ def get_appointment_slots(date, timezone):
 	holiday_list = frappe.get_doc('Holiday List', settings.holiday_list)
 	denylist_settings = frappe.get_doc('Appointment Deny List Settings')
 	denylist = frappe.get_doc('Appointment Deny List', denylist_settings.deny_list) if denylist_settings is not None and denylist_settings.deny_list is not None else None
-	timeslots = get_available_slots_between(query_start_time, query_end_time, settings, denylist)
+	min_hours = denylist_settings.min_hours if denylist_settings is not None else 0
+	timeslots = get_available_slots_between(query_start_time, query_end_time, settings, denylist, min_hours)
 
 	# Filter and convert timeslots
 	converted_timeslots = []
@@ -64,7 +65,10 @@ def get_appointment_slots(date, timezone):
 	converted_timeslots = filter_timeslots(date_required, converted_timeslots)
 	return converted_timeslots
 
-def check_if_slot_blocked(current_time, denylist):
+def check_if_slot_blocked(current_time, denylist, min_hours):
+    if min_hours>0:
+        if current_time < (datetime.datetime.now() + datetime.timedelta(hours=min_hours)):
+                return True;
     if denylist is not None:
         denyslots = denylist.slots
         for slot in denyslots:
@@ -72,7 +76,7 @@ def check_if_slot_blocked(current_time, denylist):
                 return True
     return False
 
-def get_available_slots_between(query_start_time, query_end_time, settings, denylist):
+def get_available_slots_between(query_start_time, query_end_time, settings, denylist, min_hours):
 	records = _get_records(query_start_time, query_end_time, settings)
 	timeslots = []
 	appointment_duration = datetime.timedelta(
@@ -85,7 +89,7 @@ def get_available_slots_between(query_start_time, query_end_time, settings, deny
 			current_time = _deltatime_to_datetime(query_end_time, record.from_time)
 			end_time = _deltatime_to_datetime(query_end_time, record.to_time)
 		while current_time + appointment_duration <= end_time:
-			if not check_if_slot_blocked(current_time, denylist):
+			if not check_if_slot_blocked(current_time, denylist, min_hours):
 							timeslots.append(current_time)
 			current_time += appointment_duration
 	return timeslots
